@@ -22,7 +22,8 @@ jobs:
             exit 1
           fi
           echo "✅ Найден архив: $ZIP_FILE"
-          unzip -q "$ZIP_FILE"
+          # Добавлен флаг -o для автоматической перезаписи файлов
+          unzip -o -q "$ZIP_FILE"
           rm "$ZIP_FILE"
           if [ $(ls -1 | wc -l) -eq 1 ] && [ -d */ ]; then cd */; fi
 
