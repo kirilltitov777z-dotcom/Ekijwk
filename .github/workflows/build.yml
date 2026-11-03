@@ -22,7 +22,6 @@ jobs:
             exit 1
           fi
           echo "✅ Найден архив: $ZIP_FILE"
-          # Добавлен флаг -o для автоматической перезаписи файлов
           unzip -o -q "$ZIP_FILE"
           rm "$ZIP_FILE"
           if [ $(ls -1 | wc -l) -eq 1 ] && [ -d */ ]; then cd */; fi
@@ -41,6 +40,7 @@ jobs:
       - name: Install gomobile
         run: |
           go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
           export PATH=$PATH:$(go env GOPATH)/bin
           gomobile init
 
@@ -54,7 +54,14 @@ jobs:
           if [ -n "$GO_DIR" ]; then
             cd "$GO_DIR"
             mkdir -p "$PROJECT_ROOT/app/libs"
+
+            # --- Явно добавляем зависимость golang.org/x/mobile ---
+            go get golang.org/x/mobile@latest
+            go mod tidy
+
+            # Собираем .aar
             gomobile bind -target=android -o "$PROJECT_ROOT/app/libs/app.aar" .
+
             cd "$PROJECT_ROOT"
           fi
 
