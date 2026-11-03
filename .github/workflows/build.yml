@@ -7,10 +7,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug files
+        run: |
+          echo "=== Список файлов в корне ==="
+          ls -la
+          echo "=== Поиск всех ZIP файлов ==="
+          find . -name "*.zip" -print
+
       - name: Unzip project
         run: |
-          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then echo "Zip not found!"; exit 1; fi
+          ZIP_FILE=$(find . -name "*.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "❌ ZIP файл не найден!"
+            exit 1
+          fi
+          echo "✅ Найден архив: $ZIP_FILE"
           unzip -q "$ZIP_FILE"
           rm "$ZIP_FILE"
           if [ $(ls -1 | wc -l) -eq 1 ] && [ -d */ ]; then cd */; fi
