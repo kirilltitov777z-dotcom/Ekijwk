@@ -55,7 +55,8 @@ jobs:
             cd "$GO_DIR"
             mkdir -p "$PROJECT_ROOT/app/libs"
 
-            # --- Явно добавляем зависимость golang.org/x/mobile ---
+            # --- Инициализация Go-модуля и установка зависимостей ---
+            go mod init fernvpn
             go get golang.org/x/mobile@latest
             go mod tidy
 
