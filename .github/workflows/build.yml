@@ -35,7 +35,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26' # Обновил версию, так как модуль x/mobile потребовал >= 1.26.0
+          go-version: '1.26'
 
       - name: Install gomobile
         run: |
@@ -55,12 +55,11 @@ jobs:
             cd "$GO_DIR"
             mkdir -p "$PROJECT_ROOT/app/libs"
 
-            # --- Инициализация и фиксация зависимости ---
             go mod init fernvpn || true
             go get -tool golang.org/x/mobile/cmd/gobind
 
-            # Собираем .aar
-            gomobile bind -target=android -o "$PROJECT_ROOT/app/libs/app.aar" .
+            # --- Добавлен флаг -androidapi 21 ---
+            gomobile bind -target=android -androidapi 21 -o "$PROJECT_ROOT/app/libs/app.aar" .
 
             cd "$PROJECT_ROOT"
           fi
