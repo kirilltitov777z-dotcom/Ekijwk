@@ -13,7 +13,6 @@ jobs:
           if [ -z "$ZIP_FILE" ]; then echo "❌ ZIP файл не найден!"; exit 1; fi
           unzip -o -q "$ZIP_FILE"
           rm "$ZIP_FILE"
-          # Если архив распаковался в одну папку, заходим в неё
           if [ $(ls -1 | wc -l) -eq 1 ] && [ -d */ ]; then cd */; fi
 
       - name: Setup Java
@@ -24,19 +23,21 @@ jobs:
 
       - name: Configure and Build APK
         run: |
-          # 1. Находим папку, где лежит settings.gradle.kts
+          # 1. Находим корень проекта
           PROJECT_ROOT=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1 | xargs dirname)
           cd "$PROJECT_ROOT"
 
-          # 2. Принудительно включаем AndroidX и Jetifier
+          # 2. Отключаем Jetifier (проект уже на AndroidX) и оставляем useAndroidX
           echo "android.useAndroidX=true" >> gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
+          echo "android.enableJetifier=false" >> gradle.properties
 
-          # 3. Создаем или обновляем gradlew
-          chmod +x gradlew || gradle wrapper
-          
-          # 4. Запускаем сборку
-          ./gradlew assembleDebug
+          # 3. Принудительно задаём стабильную версию Gradle (8.5)
+          chmod +x gradlew || gradle wrapper --gradle-version 8.5
+          # Если gradlew уже был, всё равно перезапишем wrapper на нужную версию
+          gradle wrapper --gradle-version 8.5
+
+          # 4. Очищаем кэш и собираем
+          ./gradlew clean assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
