@@ -27,16 +27,19 @@ jobs:
           PROJECT_ROOT=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1 | xargs dirname)
           cd "$PROJECT_ROOT"
 
-          # 2. Отключаем Jetifier (проект уже на AndroidX) и оставляем useAndroidX
+          # 2. Отключаем Jetifier и настраиваем память Gradle
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=false" >> gradle.properties
+          
+          # Выделяем 4 ГБ памяти для кучи и 1 ГБ для Metaspace
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" >> gradle.properties
+          echo "kotlin.daemon.jvmargs=-Xmx2g" >> gradle.properties
 
-          # 3. Принудительно задаём стабильную версию Gradle (8.5)
+          # 3. Настраиваем Gradle Wrapper
           chmod +x gradlew || gradle wrapper --gradle-version 8.5
-          # Если gradlew уже был, всё равно перезапишем wrapper на нужную версию
           gradle wrapper --gradle-version 8.5
 
-          # 4. Очищаем кэш и собираем
+          # 4. Собираем проект (без флага --no-daemon, так как демон теперь настроен правильно)
           ./gradlew clean assembleDebug
 
       - name: Upload APK
