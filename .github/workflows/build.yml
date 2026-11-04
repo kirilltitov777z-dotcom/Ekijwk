@@ -7,21 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug files
-        run: |
-          echo "=== Список файлов в корне ==="
-          ls -la
-          echo "=== Поиск всех ZIP файлов ==="
-          find . -name "*.zip" -print
-
       - name: Unzip project
         run: |
-          ZIP_FILE=$(find . -name "*.zip" | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "❌ ZIP файл не найден!"
-            exit 1
-          fi
-          echo "✅ Найден архив: $ZIP_FILE"
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then echo "❌ ZIP файл не найден!"; exit 1; fi
           unzip -o -q "$ZIP_FILE"
           rm "$ZIP_FILE"
           if [ $(ls -1 | wc -l) -eq 1 ] && [ -d */ ]; then cd */; fi
@@ -32,39 +21,16 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.26'
-
-      - name: Install gomobile
+      - name: Build APK
         run: |
-          go install golang.org/x/mobile/cmd/gomobile@latest
-          go install golang.org/x/mobile/cmd/gobind@latest
-          export PATH=$PATH:$(go env GOPATH)/bin
-          gomobile init
-
-      - name: Build AAR & APK
-        run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
+          # Находим папку, где лежит settings.gradle.kts
           PROJECT_ROOT=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1 | xargs dirname)
           cd "$PROJECT_ROOT"
-
-          GO_DIR=$(find . -type d -path "*app/fern/vpn" | head -n 1)
-          if [ -n "$GO_DIR" ]; then
-            cd "$GO_DIR"
-            mkdir -p "$PROJECT_ROOT/app/libs"
-
-            go mod init fernvpn || true
-            go get -tool golang.org/x/mobile/cmd/gobind
-
-            # --- Добавлен флаг -androidapi 21 ---
-            gomobile bind -target=android -androidapi 21 -o "$PROJECT_ROOT/app/libs/app.aar" .
-
-            cd "$PROJECT_ROOT"
-          fi
-
+          
+          # Делаем gradlew исполняемым (или генерируем, если его нет)
           chmod +x gradlew || gradle wrapper
+          
+          # Запускаем сборку
           ./gradlew assembleDebug
 
       - name: Upload APK
