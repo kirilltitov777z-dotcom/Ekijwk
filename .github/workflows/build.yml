@@ -13,6 +13,7 @@ jobs:
           if [ -z "$ZIP_FILE" ]; then echo "❌ ZIP файл не найден!"; exit 1; fi
           unzip -o -q "$ZIP_FILE"
           rm "$ZIP_FILE"
+          # Если архив распаковался в одну папку, заходим в неё
           if [ $(ls -1 | wc -l) -eq 1 ] && [ -d */ ]; then cd */; fi
 
       - name: Setup Java
@@ -21,16 +22,20 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Build APK
+      - name: Configure and Build APK
         run: |
-          # Находим папку, где лежит settings.gradle.kts
+          # 1. Находим папку, где лежит settings.gradle.kts
           PROJECT_ROOT=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1 | xargs dirname)
           cd "$PROJECT_ROOT"
-          
-          # Делаем gradlew исполняемым (или генерируем, если его нет)
+
+          # 2. Принудительно включаем AndroidX и Jetifier
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
+          # 3. Создаем или обновляем gradlew
           chmod +x gradlew || gradle wrapper
           
-          # Запускаем сборку
+          # 4. Запускаем сборку
           ./gradlew assembleDebug
 
       - name: Upload APK
